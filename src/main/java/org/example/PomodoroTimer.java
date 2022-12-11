@@ -5,6 +5,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.RoundRectangle2D;
 import java.io.File;
 import java.io.IOException;
 
@@ -48,13 +49,6 @@ public class PomodoroTimer extends JFrame implements ActionListener {
         timeLabel.setText(createTimeText(elapsedTime));
         start.setText("Start");
         startClicked = false;
-        int choice = JOptionPane.showConfirmDialog(null, "Nice Session", "Session End", JOptionPane.YES_NO_OPTION);
-        if (choice == JOptionPane.YES_OPTION) {
-            showMessage("Keep going");
-        } else if (choice == JOptionPane.NO_OPTION) {
-            showMessage("Don't give up");
-        }
-
     }
 
     private static void showMessage(String Keep_going) {
@@ -91,7 +85,10 @@ public class PomodoroTimer extends JFrame implements ActionListener {
         this.reset = createButton("Reset", false, 5, 200, 100, 50);
         this.plus5 = createButton("+", true, 50, 125, 50, 50);
         this.minus5 = createButton("-", false, 50, 125, 50, 50);
+        this.timeLabel = createLabel(createTimeText(elapsedTime), 275, 100, 200, 100, 15);
 
+        this.add(this.timeLabel);
+        timeLabel.setVisible(false);
         this.add(startTimeLabel);
         this.add(title);
         this.add(this.start);
@@ -130,17 +127,22 @@ public class PomodoroTimer extends JFrame implements ActionListener {
             if (!startClicked) {
                 startClicked = true;
                 elapsedTime = sessionTime * 1000;
-                this.timeLabel = createLabel(createTimeText(elapsedTime), 275, 100, 100, 100, 15);
-                this.add(this.timeLabel);
+                timeLabel.setVisible(true);
                 start.setText("STOP");
                 timer.start();
+                plus5.setVisible(false);
+                minus5.setVisible(false);
             } else {
                 startClicked = false;
                 start.setText("Start");
                 timer.stop();
             }
         } else if (e.getSource() == reset) {
+            timeLabel.setVisible(false);
+            startTimeLabel.setVisible(true);
             stopTimer();
+            plus5.setVisible(true);
+            minus5.setVisible(true);
         } else if (e.getSource() == plus5) {
             sessionTime = sessionTime + 5 * 60;
             this.startTimeLabel.setText(String.valueOf(sessionTime / 60));
