@@ -5,9 +5,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.RoundRectangle2D;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class PomodoroTimer extends JFrame implements ActionListener {
     private final int width;
@@ -19,24 +19,25 @@ public class PomodoroTimer extends JFrame implements ActionListener {
     private JButton minus5;
     private JLabel timeLabel;
     private JLabel startTimeLabel;
-    private int sessionTime = 1200;
+    private final int defaultSessionTime = 1500;
+    private int sessionTime;
     private int elapsedTime;
+    boolean startClicked = false;
 
-    private String createTimeText(int elapsedTime) {
-        int h = elapsedTime / 3600000;
-        int m = (elapsedTime / 60000) % 60;
-        int s = (elapsedTime / 1000) % 60;
-        return String.format("%02d:%02d:%02d", h, m, s);
+    private String timeText(int elapsedTime) {
+        return String.format("%02d:%02d:%02d",
+                elapsedTime / 3600000,
+                (elapsedTime / 60000) % 60,
+                (elapsedTime / 1000) % 60);
     }
 
-    boolean startClicked = false;
 
     Timer timer = new Timer(1000, new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (elapsedTime != 0) {
                 elapsedTime -= 1000;
-                timeLabel.setText(createTimeText(elapsedTime));
+                timeLabel.setText(timeText(elapsedTime));
             } else {
                 stopTimer();
             }
@@ -46,26 +47,24 @@ public class PomodoroTimer extends JFrame implements ActionListener {
     private void stopTimer() {
         timer.stop();
         elapsedTime = sessionTime * 1000;
-        timeLabel.setText(createTimeText(elapsedTime));
+        timeLabel.setText(timeText(elapsedTime));
         start.setText("Start");
         startClicked = false;
     }
 
-    private static void showMessage(String Keep_going) {
-        JOptionPane.showMessageDialog(null, Keep_going);
-    }
-
-
     public PomodoroTimer() {
+        sessionTime = defaultSessionTime;
         ImageIcon image;
         try {
-            image = new ImageIcon(ImageIO.read(new File("D:\\IdeaProjects\\pomadoro\\src\\main\\resources\\bg.jpeg")));
-            this.setContentPane(new JLabel(image));
-        } catch (IOException e) {
+            image = new ImageIcon(ImageIO.read(new File(this.getClass().getClassLoader().getResource("bg.jpeg").toURI())));
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
+        this.setContentPane(new JLabel(image));
+
         this.width = image.getIconWidth();
         this.height = image.getIconHeight();
+
         this.setSize(width, height);
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setLayout(null);
@@ -76,8 +75,6 @@ public class PomodoroTimer extends JFrame implements ActionListener {
     }
 
     private void fillWindow() {
-
-
         JLabel title = createLabel("POMODORO TIMER", 210, 50, 250, 100, 18);
         startTimeLabel = createLabel(String.valueOf(sessionTime / 60), 300, 125, 50, 50, 18);
 
@@ -85,7 +82,7 @@ public class PomodoroTimer extends JFrame implements ActionListener {
         this.reset = createButton("Reset", false, 5, 200, 100, 50);
         this.plus5 = createButton("+", true, 50, 125, 50, 50);
         this.minus5 = createButton("-", false, 50, 125, 50, 50);
-        this.timeLabel = createLabel(createTimeText(elapsedTime), 275, 100, 200, 100, 15);
+        this.timeLabel = createLabel(timeText(elapsedTime), 275, 100, 200, 100, 15);
 
         this.add(this.timeLabel);
         timeLabel.setVisible(false);
@@ -122,33 +119,45 @@ public class PomodoroTimer extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == start) {
+        Object source = e.getSource();
+        if (start.equals(source)) {
             startTimeLabel.setVisible(false);
             if (!startClicked) {
                 startClicked = true;
-                elapsedTime = sessionTime * 1000;
+                if ((sessionTime - elapsedTime) == sessionTime) {
+                    elapsedTime = sessionTime * 1000;
+                }
                 timeLabel.setVisible(true);
                 start.setText("STOP");
                 timer.start();
-                plus5.setVisible(false);
-                minus5.setVisible(false);
+                setPlusMinusVisibility(false);
             } else {
                 startClicked = false;
                 start.setText("Start");
                 timer.stop();
             }
-        } else if (e.getSource() == reset) {
+        } else if (reset.equals(source)) {
+            if (!startClicked) {
+                sessionTime = defaultSessionTime;
+                startTimeLabel.setText(String.valueOf(sessionTime / 60));
+            }
             timeLabel.setVisible(false);
             startTimeLabel.setVisible(true);
             stopTimer();
-            plus5.setVisible(true);
-            minus5.setVisible(true);
-        } else if (e.getSource() == plus5) {
+            setPlusMinusVisibility(true);
+        } else if (plus5.equals(source)) {
             sessionTime = sessionTime + 5 * 60;
             this.startTimeLabel.setText(String.valueOf(sessionTime / 60));
-        } else if (e.getSource() == minus5 && sessionTime > 300) {
+        } else if (minus5.equals(source)) {
             sessionTime = sessionTime - 5 * 60;
             this.startTimeLabel.setText(String.valueOf(sessionTime / 60));
+            if (sessionTime == 600) minus5.setVisible(false);
         }
     }
+
+    private void setPlusMinusVisibility(boolean aFlag) {
+        plus5.setVisible(aFlag);
+        minus5.setVisible(aFlag);
+    }
+
 }
